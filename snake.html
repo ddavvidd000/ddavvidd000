@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego Snake</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    #snake-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+      border: 2px solid #000;
+      background-color: #fff;
+    }
+    #game-over, #start-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: red;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="snake-container">
+    <div id="game-over">¡GAME OVER! Presiona Enter para reiniciar.</div>
+    <div id="start-message">Presiona Enter para empezar.</div>
+  </div>
+
+  <script>
+    const container = document.getElementById('snake-container');
+    const gameOverMessage = document.getElementById('game-over');
+    const startMessage = document.getElementById('start-message');
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+
+    const blockSize = 20;
+
+    let snake;
+    let direction;
+    let food;
+    let gameInterval;
+    let gameOver = false;
+    let gameStarted = false;
+
+    // Función para iniciar el juego
+    function startGame() {
+      snake = [{ x: 80, y: 80 }];
+      direction = 'RIGHT';
+      food = spawnFood();
+      drawGame();
+      gameInterval = setInterval(moveSnake, 100);
+      document.addEventListener('keydown', changeDirection);
+      gameOver = false;
+      gameStarted = true;
+      gameOverMessage.style.display = 'none';  // Ocultar mensaje de Game Over
+      startMessage.style.display = 'none';  // Ocultar mensaje de inicio
+    }
+
+    // Detener el juego
+    function stopGame() {
+      clearInterval(gameInterval);
+      document.removeEventListener('keydown', changeDirection);
+    }
+
+    // Función para reiniciar el juego
+    function restartGame() {
+      if (!gameOver) return; // No hacer nada si el juego aún no ha terminado
+      stopGame();  // Detener el juego actual
+      startGame(); // Iniciar un nuevo juego
+    }
+
+    // Función para dibujar el juego
+    function drawGame() {
+      container.innerHTML = ''; // Limpiar el contenedor
+
+      snake.forEach(segment => {
+        const snakeBlock = document.createElement('div');
+        snakeBlock.style.position = 'absolute';
+        snakeBlock.style.width = `${blockSize}px`;
+        snakeBlock.style.height = `${blockSize}px`;
+        snakeBlock.style.backgroundColor = 'green';
+        snakeBlock.style.left = `${segment.x}px`;
+        snakeBlock.style.top = `${segment.y}px`;
+        container.appendChild(snakeBlock);
+      });
+
+      const foodBlock = document.createElement('div');
+      foodBlock.style.position = 'absolute';
+      foodBlock.style.width = `${blockSize}px`;
+      foodBlock.style.height = `${blockSize}px`;
+      foodBlock.style.backgroundColor = 'red';
+      foodBlock.style.left = `${food.x}px`;
+      foodBlock.style.top = `${food.y}px`;
+      container.appendChild(foodBlock);
+    }
+
+    // Función para mover la serpiente
+    function moveSnake() {
+      const head = { ...snake[0] };
+
+      switch (direction) {
+        case 'UP': head.y -= blockSize; break;
+        case 'DOWN': head.y += blockSize; break;
+        case 'LEFT': head.x -= blockSize; break;
+        case 'RIGHT': head.x += blockSize; break;
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        food = spawnFood();
+      } else {
+        snake.pop();
+      }
+
+      if (isGameOver(head)) {
+        clearInterval(gameInterval);
+        gameOver = true;
+        gameOverMessage.style.display = 'block';  // Mostrar mensaje de Game Over
+      }
+
+      drawGame();
+    }
+
+    // Función para generar la comida en una posición aleatoria
+    function spawnFood() {
+      const x = Math.floor(Math.random() * (width / blockSize)) * blockSize;
+      const y = Math.floor(Math.random() * (height / blockSize)) * blockSize;
+      return { x, y };
+    }
+
+    // Función para cambiar la dirección de la serpiente
+    function changeDirection(event) {
+      const newDirection = event.key.replace('Arrow', '').toUpperCase();
+      if (newDirection === 'UP' && direction !== 'DOWN') {
+        direction = 'UP';
+      } else if (newDirection === 'DOWN' && direction !== 'UP') {
+        direction = 'DOWN';
+      } else if (newDirection === 'LEFT' && direction !== 'RIGHT') {
+        direction = 'LEFT';
+      } else if (newDirection === 'RIGHT' && direction !== 'LEFT') {
+        direction = 'RIGHT';
+      }
+
+      if (event.key === 'Enter' && !gameStarted) {
+        startGame(); // Iniciar el juego si no ha comenzado
+      }
+
+      if (event.key === 'Enter' && gameOver) {
+        restartGame(); // Reiniciar el juego si está en Game Over
+      }
+    }
+
+    // Verificar si la serpiente colisiona
+    function isGameOver(head) {
+      if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
+        return true;
+      }
+
+      for (let i = 1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    // Mostrar el mensaje de inicio antes de comenzar
+    startMessage.style.display = 'block';
+
+    // Iniciar el juego con Enter
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !gameStarted) {
+        startGame();  // Iniciar el juego cuando se presiona Enter
+      }
+
+      if (event.key === 'Enter' && gameOver) {
+        restartGame(); // Reiniciar el juego cuando se presiona Enter después de perder
+      }
+    });
+
+  </script>
+</body>
+</html>
